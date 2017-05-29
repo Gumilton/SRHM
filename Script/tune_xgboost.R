@@ -56,16 +56,16 @@ ef = function(pred, real) {
 xgb_grid_1 = expand.grid(
   nrounds = c(100, 1000),
   eta = c(0.5, 0.1, 0.01, 0.001),
-  max_depth = c(2, 4, 6, 8, 10),
-  gamma = c(10, 5, 1, 0.5, 0.1, 0.01),
+  max_depth = c(2, 5, 7, 10),
+  gamma = c(10, 3, 1, 0.3, 0.1, 0.01),
   colsample_bytree = c(0.5, 0.7, 0.9, 1), 
-  min_child_weight = seq(1, 11, 3),
-  subsample = seq(0.5, 1, 0.1)
+  min_child_weight = seq(1, 11, 4),
+  subsample = seq(0.4, 1, 0.3)
 )
 
 xgb_trcontrol_1 = trainControl(
   method = "cv",
-  number = 5,
+  number = 3,
   verboseIter = TRUE,
   returnData = FALSE,
   returnResamp = "all",                   # save losses across all models
