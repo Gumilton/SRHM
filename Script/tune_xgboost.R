@@ -54,13 +54,13 @@ ef = function(pred, real) {
 ### Tune
 
 xgb_grid_1 = expand.grid(
-  nrounds = c(100, 1000),
-  eta = c(0.5, 0.1, 0.01, 0.001),
-  max_depth = c(2, 5, 7, 10),
-  gamma = c(10, 3, 1, 0.3, 0.1, 0.01),
-  colsample_bytree = c(0.5, 0.7, 0.9, 1), 
+  nrounds = 1000,
+  eta = c(0.5, 0.1, 0.02),
+  max_depth = c(2, 5, 8),
+  gamma = c(3, 1, 0.3, 0.1),
+  colsample_bytree = c(0.5, 0.75, 1), 
   min_child_weight = seq(1, 11, 4),
-  subsample = seq(0.4, 1, 0.3)
+  subsample = c(0.7, 1)
 )
 
 xgb_trcontrol_1 = trainControl(
@@ -84,3 +84,53 @@ xgb_train_1 = train(
   silent = 1,
   nthread = 8
 )
+
+save.image("./tune_xgboost.RData")
+
+## Best parameter
+list(nrounds = 1000, max_depth = 5, 
+     eta = 0.02, gamma = 0.1, 
+     colsample_bytree = 1, min_child_weight = 1, subsample = 0.7)
+
+head(xgb_train_1$results[order(xgb_train_1$results$RMSE),])
+
+# eta max_depth gamma colsample_bytree min_child_weight subsample nrounds    RMSE  Rsquared   RMSESD RsquaredSD
+# 0.02         5   0.1             1.00                1       0.7    1000 2802205 0.6786370 333706.4 0.04941481
+# 0.02         5   3.0             0.50                5       0.7    1000 2805555 0.6780519 326617.1 0.04690415
+# 0.02         5   3.0             1.00                1       0.7    1000 2805825 0.6779681 323403.4 0.04596495
+# 0.02         5   0.3             0.75                1       0.7    1000 2806397 0.6778889 315824.2 0.04359049
+# 0.02         5   0.3             0.75                9       0.7    1000 2806753 0.6777403 323940.4 0.04569755
+# 0.02         5   1.0             1.00                5       0.7    1000 2807083 0.6775499 336624.3 0.04941697
+
+
+model1 = xgboost(data = as.matrix(datTrain[,-ncol(datTrain)]),
+                 label = datTrain[,ncol(datTrain)],
+                 objective = "reg:linear", silent = 2, nthread = 8,
+                 eval_metric = "rmse", nrounds = 1000, max_depth = 5, 
+                 eta = 0.02, gamma = 0.1, 
+                 colsample_bytree = 1, min_child_weight = 1, subsample = 0.7)
+ef(predict(model1, as.matrix(datTest)),  datTest$price_doc)
+
+pred = predict(model1, as.matrix(test_noNA))
+
+write.csv(cbind(id = rownames(test_noNA),
+                price_doc = pred),
+          "noNA_xgboost_tune1_eval.csv", row.names = F)
+
+
+
+
+model2 = xgboost(data = as.matrix(datTrain[,-ncol(datTrain)]),
+                 label = datTrain[,ncol(datTrain)],
+                 objective = "reg:linear", silent = 2, nthread = 8,
+                 eval_metric = "rmse", nrounds = 1000, max_depth = 5, 
+                 eta = 0.02, gamma = 3, 
+                 colsample_bytree = 0.5, min_child_weight = 5, subsample = 0.7)
+ef(predict(model2, as.matrix(datTest)),  datTest$price_doc)
+
+pred = predict(model2, as.matrix(test_noNA))
+
+write.csv(cbind(id = rownames(test_noNA),
+                price_doc = pred),
+          "noNA_xgboost_tune2_eval.csv", row.names = F)
+

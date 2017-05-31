@@ -101,35 +101,3 @@ pred = predict(model1, as.matrix(test_noNA))
 write.csv(cbind(id = rownames(test_noNA),
                 price_doc = pred),
           "noNA_xgboost_baseline_eval.csv", row.names = F)
-
-### Tune
-
-xgb_grid_1 = expand.grid(
-  nrounds = 1000,
-  eta = c(0.5, 0.1, 0.01, 0.001, 0.0001),
-  max_depth = c(2, 4, 6, 8, 10),
-  gamma = c(10, 5, 1, 0.5, 0.1, 0.01),
-  colsample_bytree = c(0.5, 0.7, 0.9, 1), 
-  min_child_weight = seq(1, 11, 3)
-)
-
-xgb_trcontrol_1 = trainControl(
-  method = "cv",
-  number = 5,
-  verboseIter = TRUE,
-  returnData = FALSE,
-  returnResamp = "all",                   # save losses across all models
-  classProbs = TRUE,                      # set to TRUE for AUC to be computed
-  allowParallel = TRUE
-)
-
-xgb_train_1 = train(
-  x = datTrain[,-ncol(datTrain)],
-  y = datTrain[,ncol(datTrain)],
-  trControl = xgb_trcontrol_1,
-  tuneGrid = xgb_grid_1,
-  method = "xgbTree",
-  eval_metric = "rmse",
-  objective = "reg:linear",
-  silent = 1
-)
