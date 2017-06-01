@@ -118,19 +118,87 @@ write.csv(cbind(id = rownames(test_noNA),
           "noNA_xgboost_tune1_eval.csv", row.names = F)
 
 
+### 
+# Learning Curve
+
+efrmse = function(pred, real) {
+  pred[is.na(pred)] = mean(real)
+  pred[pred < 0] = min(real)
+  return(sqrt(sum((pred - real)^2)/length(pred)))
+}
 
 
-model2 = xgboost(data = as.matrix(datTrain[,-ncol(datTrain)]),
-                 label = datTrain[,ncol(datTrain)],
-                 objective = "reg:linear", silent = 2, nthread = 8,
-                 eval_metric = "rmse", nrounds = 1000, max_depth = 5, 
-                 eta = 0.02, gamma = 3, 
-                 colsample_bytree = 0.5, min_child_weight = 5, subsample = 0.7)
-ef(predict(model2, as.matrix(datTest)),  datTest$price_doc)
+lc = as.data.frame(matrix(0, nrow = 10, ncol = 3))
+colnames(lc) = c("size", "TrainRMSE", "TestRMSE")
 
-pred = predict(model2, as.matrix(test_noNA))
+lc$size = ceiling(2.732^(1:10))
 
-write.csv(cbind(id = rownames(test_noNA),
-                price_doc = pred),
-          "noNA_xgboost_tune2_eval.csv", row.names = F)
+
+set.seed(934984)
+rand_ind = sample(1:nrow(datTrain), nrow(datTrain))
+
+for(i in 1:nrow(lc)) {
+  temptrain = datTrain[rand_ind[1:lc[i,1]],]
+  lcm = xgboost(data = as.matrix(temptrain[,-ncol(temptrain)]),
+                 label = temptrain[,ncol(temptrain)],
+                 objective = "reg:linear", silent = 1, nthread = 8,
+                 eval_metric = "rmse", nrounds = 2000, max_depth = 5, 
+                 eta = 0.02, gamma = 0.1, colsample_bytree = 1, 
+                 min_child_weight = 1, subsample = 0.7)
+  lc[i,2] = ef(predict(lcm, as.matrix(temptrain)),  temptrain$price_doc)
+  lc[i,3] = ef(predict(lcm, as.matrix(datTest)),  datTest$price_doc)
+}
+
+
+ggplot(lc) + 
+  geom_line(aes(x = size, y = TrainRMSE), color = "red") +
+  geom_line(aes(x = size, y = TestRMSE), color = "blue") +
+  geom_hline(yintercept = 0.32, color = "black")
+
+### Reduced Feature Space ###
+
+importance <- xgb.importance(feature_names = colnames(datTrain), model = lcm)
+
+feat50 = head(importance$Feature, 50)
+
+feat50_train = datTrain[,c(feat50, "price_doc")]
+feat50_test = datTest[,c(feat50, "price_doc")]
+
+
+
+lc50 = as.data.frame(matrix(0, nrow = 10, ncol = 3))
+colnames(lc50) = c("size", "TrainRMSE", "TestRMSE")
+
+lc50$size = ceiling(2.732^(1:10))
+
+
+set.seed(934984)
+rand_ind = sample(1:nrow(datTrain), nrow(datTrain))
+
+for(i in 1:nrow(lc50)) {
+  temptrain = feat50_train[rand_ind[1:lc50[i,1]],]
+  lcm = xgboost(data = as.matrix(temptrain[,-ncol(temptrain)]),
+                label = temptrain[,ncol(temptrain)],
+                objective = "reg:linear", silent = 1, nthread = 8,
+                eval_metric = "rmse", nrounds = 2000, max_depth = 5, 
+                eta = 0.02, gamma = 0.1, colsample_bytree = 1, 
+                min_child_weight = 1, subsample = 0.7)
+  lc50[i,2] = ef(predict(lcm, as.matrix(temptrain)),  temptrain$price_doc)
+  lc50[i,3] = ef(predict(lcm, as.matrix(feat50_test)),  feat50_test$price_doc)
+}
+
+
+ggplot(lc50) + 
+  geom_line(aes(x = size, y = TrainRMSE), color = "red") +
+  geom_line(aes(x = size, y = TestRMSE), color = "blue") +
+  geom_hline(yintercept = 0.32, color = "black")
+
+
+## Conclusion
+
+## Underfitting
+
+## Need more features
+
+
 
