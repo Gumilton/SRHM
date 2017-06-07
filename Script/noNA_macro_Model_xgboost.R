@@ -53,16 +53,44 @@ model1 = xgboost(data = as.matrix(datTrain[,-ncol(datTrain)]),
                  label = datTrain[,ncol(datTrain)],
                  objective = "reg:linear",
                  eval_metric = "rmse", max_depth = 6, eta = 0.3, 
-                 nthread = 2, nrounds = 1000)
+                 nthread = 8, nrounds = 1000)
 
 # pred <- predict(model, dtest)
 
-ef(predict(model1, dtest),  datTest$price_doc)
+ef(predict(model1,  as.matrix(datTest)),  datTest$price_doc)
 
 pred = predict(model1, as.matrix(test_noNA))
 
 write.csv(cbind(id = rownames(test_noNA),
                 price_doc = pred),
           "noNA_xgboost_macro_beforeTune_eval.csv", row.names = F)
+
+
+lc = as.data.frame(matrix(0, nrow = 10, ncol = 3))
+colnames(lc) = c("size", "TrainRMSE", "TestRMSE")
+
+lc$size = ceiling(2.732^(1:10))
+
+
+set.seed(934984)
+rand_ind = sample(1:nrow(datTrain), nrow(datTrain))
+
+for(i in 1:nrow(lc)) {
+  temptrain = datTrain[rand_ind[1:lc[i,1]],]
+  lcm = xgboost(data = as.matrix(temptrain[,-ncol(temptrain)]),
+                label = temptrain[,ncol(temptrain)],
+                objective = "reg:linear", silent = 1, nthread = 8,
+                eval_metric = "rmse", nrounds = 2000, max_depth = 5, 
+                eta = 0.02, gamma = 0.1, colsample_bytree = 1, 
+                min_child_weight = 1, subsample = 0.7)
+  lc[i,2] = ef(predict(lcm, as.matrix(temptrain)),  temptrain$price_doc)
+  lc[i,3] = ef(predict(lcm, as.matrix(datTest)),  datTest$price_doc)
+}
+
+
+ggplot(lc) + 
+  geom_line(aes(x = size, y = TrainRMSE), color = "red") +
+  geom_line(aes(x = size, y = TestRMSE), color = "blue") +
+  geom_hline(yintercept = 0.32, color = "black")
 
 ### Tune
