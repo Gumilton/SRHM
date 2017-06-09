@@ -10,8 +10,8 @@ price_log2 = log2(train$price_doc)
 q1 = quantile(price_log2, .25)
 q3 = quantile(price_log2, .75)
 
-high = q3 + (q3-q1)*3
-low = q1 - (q3-q1)*3
+high = q3 + (q3-q1)*5
+low = q1 - (q3-q1)*5
 
 price_log2[price_log2 > high] = high
 price_log2[price_log2 < low] = low
