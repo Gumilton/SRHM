@@ -150,23 +150,23 @@ save.image("./impute_clean_xgboost.RData")
 head(xgb_train_1$results[order(xgb_train_1$results$RMSE),])
 
 # eta max_depth gamma colsample_bytree min_child_weight subsample nrounds    RMSE  Rsquared   RMSESD
-# 0.02         5   0.3             1.00                1       0.8    1000 2640088 0.7150153 87168.10
-# 0.02         5   3.0             0.75                5       0.7    1000 2646202 0.7138048 94848.44
-# 0.02         5   3.0             1.00                5       0.7    1000 2648954 0.7131197 94820.75
-# 0.02         5   1.0             0.75                1       0.8    1000 2650222 0.7129444 86133.35
-# 0.02         6   0.3             1.00                1       0.7    1000 2650768 0.7128434 78129.39
-# 0.02         4   0.1             1.00                1       0.7    1000 2651132 0.7126920 97007.54
+# 0.025         5   0.3             0.85                1       0.8    1000 2678919 0.7064678 70222.77
+# 0.025         5   3.0             0.75                2       0.7    1000 2679136 0.7066265 60992.69
+# 0.025         5   1.0             0.85                5       0.7    1000 2680768 0.7061018 58836.44
+# 0.020         5   1.0             0.75                1       0.7    1000 2681452 0.7059229 65329.54
+# 0.020         6   3.0             0.75                5       0.7    1000 2682107 0.7057659 50329.35
+# 0.025         5   3.0             0.75                1       0.7    1000 2682915 0.7055868 62330.88
 # RsquaredSD
-# 0.007053504
-# 0.005819339
-# 0.005596529
-# 0.006311580
-# 0.007249682
-# 0.006759130
+# 0.01561210
+# 0.01537002
+# 0.01616134
+# 0.01630266
+# 0.01838025
+# 0.01986486
 
 ## Best parameter
-list(nrounds = 1000, max_depth = 5, eta = 0.02, gamma = 0.3, 
-     colsample_bytree = 1, min_child_weight = 1, subsample = 0.8)
+list(nrounds = 1000, max_depth = 5, eta = 0.025, gamma = 0.3, 
+     colsample_bytree = 0.85, min_child_weight = 1, subsample = 0.88)
 
 
 
@@ -174,9 +174,8 @@ model2 = xgboost(data = as.matrix(datTrain[,-ncol(datTrain)]),
                  label = datTrain[,ncol(datTrain)],
                  objective = "reg:linear", nthread = 8,
                  eval_metric = "rmse", nrounds = 1000, max_depth = 5, 
-                 eta = 0.02, gamma = 0.3, 
-                 colsample_bytree = 1, min_child_weight = 1, 
-                 subsample = 0.8)
+                 eta = 0.025, gamma = 0.3, colsample_bytree = 0.85, 
+                 min_child_weight = 1, subsample = 0.88)
 
 # pred <- predict(model, dtest)
 
